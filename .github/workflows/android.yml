@@ -9,11 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download project
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Extract project
-        run: unzip Stand_Arena_Android_Project.zip -d project
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -21,21 +18,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Find Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found"
-            exit 1
-          fi
-          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
-          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
 
-      - name: Install Android SDK packages
-        run: |
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
-          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Android packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Extract project
+        run: unzip Stand_Arena_Android_Project.zip -d project
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -43,11 +33,5 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build APK
-        working-directory: project/JoJo_Inspired_Android_Project
-        run: gradle assembleDebug
-
-      - name: Save APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Stand-Arena-APK
-          path: project/JoJo_Inspired_Android_Project/app/build/outputs/apk/debug/app-debug.apk
+        run: |
+          find project -name gradlew -type f
